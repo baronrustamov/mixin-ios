@@ -170,6 +170,7 @@ public final class UserDatabase: Database {
             .init(key: .quoteContent, constraints: "BLOB"),
             .init(key: .createdAt, constraints: "TEXT NOT NULL"),
             .init(key: .albumId, constraints: "TEXT"),
+            .init(key: .hyperlink, constraints: "TEXT")
         ]),
         ColumnMigratableTableDefinition<MessageHistory>(constraints: nil, columns: [
             .init(key: .messageId, constraints: "TEXT PRIMARY KEY"),
@@ -516,6 +517,25 @@ public final class UserDatabase: Database {
             }
             if !topAssetsColumns.contains("tag") {
                 try db.execute(sql: "ALTER TABLE top_assets ADD COLUMN tag TEXT")
+            }
+        }
+        
+        migrator.registerMigration("hyperlinks") { db in
+            let sql = """
+            CREATE TABLE IF NOT EXISTS hyperlinks(
+                hyperlink TEXT NOT NULL,
+                site_name TEXT NOT NULL,
+                site_title TEXT NOT NULL,
+                site_description TEXT,
+                site_image TEXT,
+                PRIMARY KEY (hyperlink)
+            )
+            """
+            try db.execute(sql: sql)
+            
+            let messageInfos = try TableInfo.fetchAll(db, sql: "PRAGMA table_info(messages)")
+            if !messageInfos.map(\.name).contains("hyperlink") {
+                try db.execute(sql: "ALTER TABLE messages ADD COLUMN hyperlink TEXT")
             }
         }
         
