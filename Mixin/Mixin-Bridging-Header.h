@@ -2,7 +2,7 @@
 //  Use this file to import your target's public headers that you would like to expose to Swift.
 //
 
-#import "MXMFastURLDetector.h"
+#import "MXSFastURLDetector.h"
 #import "MXMProvisionCryptor.h"
 #import "opusfile.h"
 #import "opusenc.h"
