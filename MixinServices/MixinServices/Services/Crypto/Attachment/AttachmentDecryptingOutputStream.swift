@@ -31,7 +31,7 @@ class AttachmentDecryptingOutputStream: OutputStream {
         return true
     }
     
-    init?(url: URL, key: Data, digest: Data) {
+    init?(url: URL, key: Data, digest: Data, fileExists: Bool) {
         guard key.count > 0, key.count >= AttachmentCryptography.Length.aesKey + AttachmentCryptography.Length.hmac256Key else {
             return nil
         }
@@ -39,11 +39,17 @@ class AttachmentDecryptingOutputStream: OutputStream {
             return nil
         }
         do {
-            if FileManager.default.fileExists(atPath: url.path) {
-                try FileManager.default.removeItem(at: url)
+            if !fileExists {
+                try Data().write(to: url)
             }
-            try Data().write(to: url)
-            self.handle = try FileHandle(forWritingTo: url)
+            handle = try FileHandle(forWritingTo: url)
+            if fileExists {
+                if #available(iOSApplicationExtension 13.4, *) {
+                    try handle.seekToEnd()
+                } else {
+                    try handle.seekToEndOfFile()
+                }
+            }
         } catch {
             return nil
         }

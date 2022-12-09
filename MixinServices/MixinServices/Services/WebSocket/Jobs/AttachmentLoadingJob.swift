@@ -45,7 +45,7 @@ open class AttachmentLoadingJob: AsynchronousJob {
             weakSelf.finishJob()
             return
         }
-        guard statusCode == 200 else {
+        guard statusCode == 200 || statusCode == 206 else {
             if weakSelf.retry() {
                 return
             }

@@ -269,12 +269,19 @@ extension AttachmentDownloadJob {
         }
         self.attachResponse = attachResponse
         
+        let downloadedBytes: Int64
+        if FileManager.default.fileExists(atPath: fileUrl.path) {
+            downloadedBytes = FileManager.default.fileSize(fileUrl.path)
+        } else {
+            downloadedBytes = 0
+        }
+        let fileExists = downloadedBytes > 0
         let decrypting: Bool
         if let key = owner.mediaKey, !key.isEmpty, let digest = owner.mediaDigest, !digest.isEmpty {
-            stream = AttachmentDecryptingOutputStream(url: fileUrl, key: key, digest: digest)
+            stream = AttachmentDecryptingOutputStream(url: fileUrl, key: key, digest: digest, fileExists: fileExists)
             decrypting = true
         } else {
-            stream = OutputStream(url: fileUrl, append: false)
+            stream = OutputStream(url: fileUrl, append: true)
             decrypting = false
         }
         
@@ -290,7 +297,10 @@ extension AttachmentDownloadJob {
         configuration.timeoutIntervalForRequest = 30
         var request = URLRequest(url: downloadUrl)
         request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
-        
+        if fileExists {
+            let requestRange = String(format: "bytes=%llu-", downloadedBytes)
+            request.addValue(requestRange, forHTTPHeaderField: "Range")
+        }
         let session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
         task = session.dataTask(with: request)
         task?.resume()
